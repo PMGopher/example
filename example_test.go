@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/PMGopher/pocketmine-go/pocketmine/command"
-	"github.com/PMGopher/pocketmine-go/pocketmine/console"
-	"github.com/PMGopher/pocketmine-go/pocketmine/log"
-	"github.com/PMGopher/pocketmine-go/pocketmine/server"
+	"pocketmine-go/pocketmine/command"
+	"pocketmine-go/pocketmine/console"
+	"pocketmine-go/pocketmine/log"
+	"pocketmine-go/pocketmine/server"
 )
 
 func TestExamplePluginLoads(t *testing.T) {

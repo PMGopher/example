@@ -21,7 +21,7 @@ Plugins are compiled into the server. In your clone of
 [pocketmine-go](https://github.com/PMGopher/pocketmine-go):
 
 ```bash
-go get github.com/PMGopher/example@latest
+go get github.com/PMGopher/example@v1.0.0
 ```
 
 Then import it in `cmd/pocketmine-go/plugins.go`:
@@ -79,7 +79,7 @@ conversion guide, for people and AI agents alike.
 
 ## Developing
 
-Clone this repository **next to** the server, so the `replace` line in `go.mod` finds it:
+Clone this repository **next to** the server, so `go.work` finds it:
 
 ```text
 workspace/
@@ -93,8 +93,14 @@ go vet ./...
 go test ./...   # starts a real server in a temporary folder and loads the plugin
 ```
 
-The `replace` line only matters while you work on the plugin by itself. When the server builds
-the plugin, the server's own code is used.
+`go.mod` has no `require` lines: the plugin only imports the server, and the server provides those
+packages itself when it builds the plugin. `go.work` points Go at the server clone while you work on
+the plugin by itself; the server ignores it.
+
+## Versions
+
+Releases are git tags (`v1.0.0`, `v1.0.1`, ...), matching the `version` in `plugin.yml`. Server
+owners pin one with `go get github.com/PMGopher/example@v1.0.0`; `@latest` picks the newest tag.
 
 ## Credits
 - **[MEMOxiiii](https://github.com/MEMOxiiii)**: developer of PocketMine-go.

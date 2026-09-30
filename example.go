@@ -22,13 +22,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/PMGopher/pocketmine-go/pocketmine/command"
-	playerevent "github.com/PMGopher/pocketmine-go/pocketmine/event/player"
-	"github.com/PMGopher/pocketmine-go/pocketmine/player"
-	"github.com/PMGopher/pocketmine-go/pocketmine/plugin"
-	"github.com/PMGopher/pocketmine-go/pocketmine/scheduler"
-	"github.com/PMGopher/pocketmine-go/pocketmine/server"
-	"github.com/PMGopher/pocketmine-go/pocketmine/utils"
+	"pocketmine-go/pocketmine/command"
+	playerevent "pocketmine-go/pocketmine/event/player"
+	"pocketmine-go/pocketmine/player"
+	"pocketmine-go/pocketmine/plugin"
+	"pocketmine-go/pocketmine/scheduler"
+	"pocketmine-go/pocketmine/server"
+	"pocketmine-go/pocketmine/utils"
 )
 
 // files is the plugin's folder: plugin.yml at the root, default files in resources/. They are

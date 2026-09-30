@@ -1,0 +1,8 @@
+go 1.26.1
+
+// Development only: builds this plugin against a clone of the server next to it (see README.md).
+// The server doesn't read this file when it builds the plugin.
+use (
+	.
+	../pocketmine-go
+)

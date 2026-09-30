@@ -32,7 +32,9 @@ style (`getServer()` → `GetServer()`). Most conversions are a straight transla
 1. **Read the whole PHP plugin first**: `plugin.yml`, every class under `src/`, `resources/`.
    List its events, commands, permissions, config keys, tasks and any virions.
 2. **Create the module**: copy this repository, then set your own module path in `go.mod`
-   (`module github.com/you/yourplugin`) and rename the package in the `.go` files.
+   (`module github.com/you/yourplugin`) and rename the package in the `.go` files. Keep `go.work`
+   for developing next to a server clone. `go.mod` needs no `require` for the server; add
+   `require` lines only for other modules your plugin uses (its former virions, ...).
 3. **Copy `plugin.yml` as is.** Keep `name`, `version`, `api`, `depend`, `softdepend`,
    `loadbefore`, `load`, `commands` and `permissions`; they work the same. Change `main` to
    something like `yourplugin.Main` (informational). `src-namespace-prefix` isn't used.
@@ -44,7 +46,8 @@ style (`getServer()` → `GetServer()`). Most conversions are a straight transla
 8. **Write a test** like [example_test.go](example_test.go): it starts a real server in a
    temporary folder, checks that the plugin loads, and runs its commands.
 9. **Run `go vet ./...` and `go test ./...`** until both are clean.
-10. **Add it to a server** (see [README.md](README.md#adding-it-to-your-server)) and try it in game.
+10. **Tag a release** matching `version` in `plugin.yml` (`git tag v1.0.0`).
+11. **Add it to a server** (see [README.md](README.md#adding-it-to-your-server)) and try it in game.
 
 ## 3. The main class
 
@@ -118,7 +121,7 @@ err := m.srv().GetPluginManager().RegisterEvents(&listener{plugin: m}, m)
   handler. The parameter type chooses the event.
 - Events live in one package per PHP namespace, with the same class names:
   `pocketmine\event\player\PlayerJoinEvent` → `playerevent.PlayerJoinEvent` from
-  `github.com/PMGopher/pocketmine-go/pocketmine/event/player`. The same goes for `event/block`,
+  `pocketmine-go/pocketmine/event/player`. The same goes for `event/block`,
   `event/entity`, `event/inventory`, `event/world`, `event/server` and `event/plugin`.
 - `$event->cancel()` → `e.Cancel()`, `$event->isCancelled()` → `e.IsCancelled()`.
 - `$event->getPlayer()` returns a small interface (name, position, ...). Assert it to reach the
