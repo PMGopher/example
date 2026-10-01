@@ -26,8 +26,11 @@ func TestExamplePluginLoads(t *testing.T) {
 	if p == nil || !p.IsEnabled() {
 		t.Fatal("ExamplePlugin wasn't loaded and enabled")
 	}
-	if _, err := os.Stat(filepath.Join(p.GetDataFolder(), "config.yml")); err != nil {
+	if _, err := os.Stat(filepath.Join(p.GetDataFolder(), "config.toml")); err != nil {
 		t.Errorf("the default config wasn't saved: %v", err)
+	}
+	if got := p.(*Main).GetConfig().Get("tip-interval", nil); got != 5 {
+		t.Errorf("tip-interval = %v (%T), want 5 from config.toml", got, got)
 	}
 	if p.(*Main).tipTask == nil {
 		t.Error("the tip task wasn't scheduled")

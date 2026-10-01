@@ -1,11 +1,11 @@
 // Package example is a small PocketMine-go plugin: copy this repository to start your own.
 //
 // It shows the parts most plugins need:
-//   - registering the plugin (init, below) and its plugin.yml / resources (embedded)
+//   - registering the plugin (init, below) and its plugin.toml / resources (embedded)
 //   - OnEnable / OnDisable
-//   - a config file with defaults (resources/config.yml)
+//   - a config file with defaults (resources/config.toml)
 //   - an event listener (PlayerJoinEvent)
-//   - a command declared in plugin.yml, handled by OnCommand
+//   - a command declared in plugin.toml, handled by OnCommand
 //   - a repeating task on the plugin's scheduler
 //
 // To load it, add it to the server (see README.md):
@@ -31,19 +31,19 @@ import (
 	"pocketmine-go/pocketmine/utils"
 )
 
-// files is the plugin's folder: plugin.yml at the root, default files in resources/. They are
+// files is the plugin's folder: plugin.toml at the root, default files in resources/. They are
 // compiled into the server binary, so there is nothing to copy next to it.
 //
-//go:embed plugin.yml resources
+//go:embed plugin.toml resources
 var files embed.FS
 
 // init registers the plugin. The server loads it on startup like any other plugin: it checks the
-// api version in plugin.yml, plugin_list.yml, dependencies and load order, then calls OnEnable.
+// api version in plugin.toml, plugin_list.toml, dependencies and load order, then calls OnEnable.
 func init() {
 	plugin.RegisterGoPlugin(files, func() plugin.Plugin { return &Main{} })
 }
 
-// Main is the plugin's main type (what "main" in plugin.yml names). Embedding plugin.PluginBase
+// Main is the plugin's main type (what "main" in plugin.toml names). Embedding plugin.PluginBase
 // gives it everything a plugin needs: GetServer, GetLogger, GetConfig, GetScheduler, ...
 type Main struct {
 	plugin.PluginBase
@@ -53,7 +53,7 @@ type Main struct {
 
 // OnEnable runs when the plugin is enabled. Returning an error disables it again.
 func (m *Main) OnEnable() error {
-	// Copies resources/config.yml to plugin_data/ExamplePlugin/config.yml unless it's already there.
+	// Copies resources/config.toml to plugin_data/ExamplePlugin/config.toml unless it's already there.
 	m.SaveDefaultConfig()
 
 	// Every exported method of the listener that takes one event is registered as its handler.
@@ -72,7 +72,7 @@ func (m *Main) OnDisable() {
 	m.GetLogger().Info("ExamplePlugin disabled, bye!")
 }
 
-// OnCommand handles the commands declared in plugin.yml. The server has already checked the
+// OnCommand handles the commands declared in plugin.toml. The server has already checked the
 // permission. Return false to show the usage message.
 func (m *Main) OnCommand(sender command.Sender, cmd command.CommandLike, label string, args []string) bool {
 	if len(args) == 1 && strings.EqualFold(args[0], "reload") {
@@ -149,7 +149,7 @@ func (l *joinListener) OnJoin(e *playerevent.PlayerJoinEvent) {
 	p.SendTitle(title, subtitle, -1, -1, -1)
 }
 
-// configInt reads a whole number from a YAML value.
+// configInt reads a whole number from a config value.
 func configInt(v any) int {
 	switch n := v.(type) {
 	case int:

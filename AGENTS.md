@@ -6,8 +6,8 @@ This guide is for anyone, human or AI agent, who wants to take a plugin written 
 result: a working plugin that uses every piece described below. Read [example.go](example.go)
 alongside this file.
 
-PocketMine-go has the same plugin API as PocketMine-MP, in Go: the same `plugin.yml`, the same
-events, commands, permissions, configs and scheduler, and the same class and method names in Go
+PocketMine-go has the same plugin API as PocketMine-MP, in Go: the same manifest keys (in
+`plugin.toml`), the same events, commands, permissions, configs and scheduler, and the same class and method names in Go
 style (`getServer()` → `GetServer()`). Most conversions are a straight translation, file by file.
 
 ---
@@ -17,8 +17,9 @@ style (`getServer()` → `GetServer()`). Most conversions are a straight transla
 | PocketMine-MP | PocketMine-go |
 |---|---|
 | A plugin is a folder or `.phar` dropped in `plugins/` | A plugin is a **Go module**, compiled into the server (`go get` + one import line) |
-| `main: vendor\plugin\Main` names the class to load | `init()` calls `plugin.RegisterGoPlugin`, which creates your main type; `main` in `plugin.yml` is only informational |
-| `resources/` is read from the plugin folder | `plugin.yml` and `resources/` are embedded with `//go:embed` |
+| `plugin.yml`, `config.yml` and other YAML files | **TOML**: `plugin.toml`, `config.toml` (see §2 and §7) |
+| `main: vendor\plugin\Main` names the class to load | `init()` calls `plugin.RegisterGoPlugin`, which creates your main type; `main` in `plugin.toml` is only informational |
+| `resources/` is read from the plugin folder | `plugin.toml` and `resources/` are embedded with `//go:embed` |
 | Classes and inheritance (`extends PluginBase`) | Structs and embedding (`struct{ plugin.PluginBase }`) |
 | Exceptions | `error` return values; a panic is a bug |
 | `array` | slices (`[]T`) and maps (`map[K]V`) |
@@ -35,19 +36,62 @@ style (`getServer()` → `GetServer()`). Most conversions are a straight transla
    (`module github.com/you/yourplugin`) and rename the package in the `.go` files. Keep `go.work`
    for developing next to a server clone. `go.mod` needs no `require` for the server; add
    `require` lines only for other modules your plugin uses (its former virions, ...).
-3. **Copy `plugin.yml` as is.** Keep `name`, `version`, `api`, `depend`, `softdepend`,
-   `loadbefore`, `load`, `commands` and `permissions`; they work the same. Change `main` to
-   something like `yourplugin.Main` (informational). `src-namespace-prefix` isn't used.
-4. **Copy `resources/`** (default `config.yml`, language files, ...) and embed them:
-   `//go:embed plugin.yml resources`.
+3. **Turn `plugin.yml` into `plugin.toml`** with the same keys: `name`, `version`, `api`,
+   `depend`, `softdepend`, `loadbefore`, `load`, `commands` and `permissions` work the same.
+   Change `main` to something like `yourplugin.Main` (informational). `src-namespace-prefix`
+   isn't used. Keep the permissions in the same order: a `default` carries forward to the
+   permissions declared after it, as in PocketMine-MP. See the side-by-side example below.
+4. **Copy `resources/`** (language files, ...), turn the default `config.yml` into
+   `config.toml` with the same keys (§7), and embed them: `//go:embed plugin.toml resources`.
 5. **Translate the main class** into a `Main` struct embedding `plugin.PluginBase` (§3).
 6. **Translate each listener, command and task** (§4 to §8), keeping the plugin's behaviour.
 7. **Replace virions and PHP-only tricks** (§10).
 8. **Write a test** like [example_test.go](example_test.go): it starts a real server in a
    temporary folder, checks that the plugin loads, and runs its commands.
 9. **Run `go vet ./...` and `go test ./...`** until both are clean.
-10. **Tag a release** matching `version` in `plugin.yml` (`git tag v1.0.0`).
+10. **Tag a release** matching `version` in `plugin.toml` (`git tag v1.0.0`).
 11. **Add it to a server** (see [README.md](README.md#adding-it-to-your-server)) and try it in game.
+
+### `plugin.yml` → `plugin.toml`
+
+```yaml
+name: HomePlugin
+version: 2.1.0
+main: alex\home\Main
+api: [5.0.0]
+depend: [EconomyAPI]
+commands:
+  home:
+    description: Teleports you home
+    usage: /home [name]
+    aliases: [h]
+    permission: home.command.home
+permissions:
+  home.command.home:
+    default: true
+  home.command.sethome:
+    description: Set your home
+```
+
+```toml
+name = "HomePlugin"
+version = "2.1.0"
+main = "home.Main"
+api = ["5.0.0"]
+depend = ["EconomyAPI"]
+
+[commands.home]
+description = "Teleports you home"
+usage = "/home [name]"
+aliases = ["h"]
+permission = "home.command.home"
+
+[permissions."home.command.home"]
+default = true
+
+[permissions."home.command.sethome"]
+description = "Set your home"
+```
 
 ## 3. The main class
 
@@ -60,7 +104,7 @@ class Main extends PluginBase{
 ```
 
 ```go
-//go:embed plugin.yml resources
+//go:embed plugin.toml resources
 var files embed.FS
 
 func init() {
@@ -131,7 +175,7 @@ err := m.srv().GetPluginManager().RegisterEvents(&listener{plugin: m}, m)
 
 ## 5. Commands
 
-Commands declared in `plugin.yml` are registered for you, exactly like PocketMine-MP.
+Commands declared in `plugin.toml` are registered for you, exactly like PocketMine-MP.
 
 ```php
 public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
@@ -159,7 +203,7 @@ With several commands, `switch cmd.Label() { case "heal": ... }`.
 
 ## 6. Permissions
 
-Declare them in `plugin.yml` as before. `$sender->hasPermission("x.y")` →
+Declare them in `plugin.toml` as before. `$sender->hasPermission("x.y")` →
 `sender.HasPermission("x.y")`.
 
 ## 7. Configs
@@ -177,12 +221,28 @@ m.SaveDefaultConfig()
 max := configInt(m.GetConfig().Get("max-homes", 3))
 m.GetConfig().Set("max-homes", 5)
 err := m.GetConfig().Save()
-data, err := utils.NewConfig(filepath.Join(m.GetDataFolder(), "homes.yml"), utils.ConfigYAML, map[string]any{})
+data, err := utils.NewConfig(filepath.Join(m.GetDataFolder(), "homes.toml"), utils.ConfigTOML, map[string]any{})
 ```
 
-`Get` returns `any`, so assert the type: `name, _ := cfg.Get("name", "").(string)`. YAML numbers
-can come back as `int`, `int64`, `uint64` or `float64`; a small helper such as `configInt` in
-[example.go](example.go) handles all of them. `GetNested`/`SetNested` work with dotted keys.
+The plugin's config is `config.toml` in its data folder, copied from `resources/config.toml`.
+Server owners who used the PocketMine-MP version of your plugin keep their settings: a
+`config.yml` already in the data folder is converted to `config.toml` on first start (and kept as
+`config.yml.bak`). Use the same key names as the original.
+
+`Get` returns `any`, so assert the type: `name, _ := cfg.Get("name", "").(string)`. Whole numbers
+come back as `int`, decimals as `float64`; a small helper such as `configInt` in
+[example.go](example.go) accepts both. `GetNested`/`SetNested` work with dotted keys.
+
+YAML to TOML, the parts that change:
+
+| YAML | TOML |
+|---|---|
+| `key: value` | `key = "value"` (strings are quoted) |
+| `list: [a, b]` or `- a` lines | `list = ["a", "b"]` |
+| `section:` + indented keys | `[section]` header, then `key = value` lines |
+| `a.b.c:` as a key (dots in the name) | quoted key: `"a.b.c" = ...` or `[permissions."a.b.c"]` |
+| `key: ~` (null) | leave the key out (TOML has no null) |
+| `# comment` | `# comment` |
 
 ## 8. Tasks and async work
 
@@ -264,7 +324,7 @@ code is organised like PocketMine-MP (`pocketmine/player`, `pocketmine/world`, `
 
 ## 11. Checklist before you publish
 
-- [ ] `plugin.yml` has the same name, commands and permissions as the original.
+- [ ] `plugin.toml` has the same name, commands and permissions as the original.
 - [ ] Every event handler, command and task of the original has a Go counterpart.
 - [ ] Default config keys and file names match, so existing server owners keep their settings.
 - [ ] No game state is touched from a goroutine.
